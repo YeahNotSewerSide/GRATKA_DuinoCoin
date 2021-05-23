@@ -521,9 +521,10 @@ if __name__ == '__main__':
     print('Found correlation rout:')
     print(" -> ".join(rout))
 
-    rout = graph.find_strongest_correlations('TestAcc2','revox')
-    print('Found strongest correlation:')
-    print(" -> ".join(rout))
+    # Not working rn:
+    #rout = graph.find_strongest_correlations('TestAcc2','revox')
+    #print('Found strongest correlation:')
+    #print(" -> ".join(rout))
 
     input()
         
