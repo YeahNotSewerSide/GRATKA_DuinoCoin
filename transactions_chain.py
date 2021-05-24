@@ -3,6 +3,13 @@ import datetime
 import threading
 import Graph
 
+
+STANDART_WHITE_LIST = ['coinexchange',
+                       'NodeSBroker',
+                       'NodeS',
+                       'ducofaucet',
+                       'exchange-bot']
+
 class Transaction:
     def __init__(self,raw_data:dict):
         self.amount:float = raw_data['amount']
@@ -364,12 +371,17 @@ def _get_transactions_threads_master(usernames:list) -> list:
     return buffer
     
  
-def trace_transactions(username:str, 
+def trace_transactions(username:str,
+                       white_list=[],
                        use_threads = True, 
                        max_bunch = 10) -> TrasnsactionsChain:
     '''
     traces all transactions for username and all related transactions
     '''
+    usernames_to_skip = {}
+    for username_to_skip in white_list:
+        usernames_to_skip[username_to_skip] = True
+
     transactions_chain = TrasnsactionsChain(username)
     processed_usernames = {} # username:True
     usernames_to_process = [username]
@@ -381,8 +393,13 @@ def trace_transactions(username:str,
             processed_usernames[username] = True
             for transaction in transactions:
                 if transaction.get_sender() not in processed_usernames\
-                                and transaction.get_sender() not in usernames_to_process:
+                        and transaction.get_sender() not in usernames_to_process\
+                        and transaction.get_sender() not in usernames_to_skip:
                     usernames_to_process.append(transaction.get_sender())
+                elif transaction.get_recipient() not in processed_usernames\
+                        and transaction.get_recipient() not in usernames_to_process\
+                        and transaction.get_recipient() not in usernames_to_skip:
+                    usernames_to_process.append(transaction.get_recipient())
                 
                 transactions_chain.append_transaction(transaction)
     else:
@@ -406,8 +423,13 @@ def trace_transactions(username:str,
             
             for transaction in transactions:
                 if transaction.get_sender() not in processed_usernames\
-                                and transaction.get_sender() not in usernames_to_process:
+                        and transaction.get_sender() not in usernames_to_process\
+                        and transaction.get_sender() not in usernames_to_skip:
                     usernames_to_process.append(transaction.get_sender())
+                elif transaction.get_recipient() not in processed_usernames\
+                        and transaction.get_recipient() not in usernames_to_process\
+                        and transaction.get_recipient() not in usernames_to_skip:
+                    usernames_to_process.append(transaction.get_recipient())
                 
                 transactions_chain.append_transaction(transaction)
     return transactions_chain
@@ -456,21 +478,24 @@ def determine_main_account(transactions:TrasnsactionsChain,
             max_amount_transactions = len(suspicious_transactions)
     return to_return
 
-def detect_suspicious_accounts(username:str,**kwargs) -> tuple:
+def detect_suspicious_accounts(username:str,white_list=[],**kwargs) -> tuple:
     '''returns tuple(sus_accounts:list, main_accounts:list)'''
-    transactions = trace_transactions(username,kwargs)
+
+    transactions = trace_transactions(username,white_list,kwargs)
 
     processed_usernames = {}
     sus_usernames = {username:True}
 
     sus_accounts = transactions.search_one_way_senders()
     for sus in sus_accounts:
-        if sus not in sus_usernames:
+        if sus not in sus_usernames\
+            and sus not in white_list:
             sus_usernames[sus] = True
 
     sus_accounts = transactions.search_one_way_recipients()
     for sus in sus_accounts:
-        if sus not in sus_usernames:
+        if sus not in sus_usernames\
+            and sus not in white_list:
             sus_usernames[sus] = True
 
     processed_usernames[username] = True
@@ -479,19 +504,22 @@ def detect_suspicious_accounts(username:str,**kwargs) -> tuple:
         if transaction.get_sender() not in processed_usernames:
             sus_accounts = transactions.search_one_way_senders(transaction.get_sender())
             for sus in sus_accounts:
-                if sus not in sus_usernames:
+                if sus not in sus_usernames\
+                    and sus not in white_list:
                     sus_usernames[sus] = True
 
             sus_accounts = transactions.search_one_way_recipients(transaction.get_sender())
             for sus in sus_accounts:
-                if sus not in sus_usernames:
+                if sus not in sus_usernames\
+                    and sus not in white_list:
                     sus_usernames[sus] = True
 
             processed_usernames[transaction.get_sender()] = True
         if transaction.get_recipient() not in processed_usernames:
             sus_accounts = transactions.search_one_way_senders(transaction.get_recipient())
             for sus in sus_accounts:
-                if sus not in sus_usernames:
+                if sus not in sus_usernames\
+                    and sus not in white_list:
                     sus_usernames[sus] = True
             processed_usernames[transaction.get_recipient()] = True
     sus_usernames = list(sus_usernames.keys())
@@ -501,28 +529,27 @@ def detect_suspicious_accounts(username:str,**kwargs) -> tuple:
 
 
 if __name__ == '__main__':
-    username = 'revox'
-    transactions = trace_transactions(username,max_bunch=-1)
+    username = 'ttuanphong'
+    transactions = trace_transactions(username,white_list=STANDART_WHITE_LIST,max_bunch=-1)
     file = open('output.txt','w',encoding='utf-8')
     file.write(str(transactions))
     file.close()
-    #print(transactions.get_top_senders(username))
-    #print(transactions.get_top_recipients(username))
+    print(transactions.get_top_senders(username))
+    print(transactions.get_top_recipients(username))
     #print(total_recieved(username))
     #print(total_sent(username))
     #print(transactions.search_one_way_senders())
-    #sus = detect_suspicious_accounts(username,max_bunch=-1)
+    sus = detect_suspicious_accounts(username,white_list=STANDART_WHITE_LIST,max_bunch=-1)
     
-    #print("SUS accounts:",sus[0])
-    #print("Possible master accounts:",sus[1])
+    print("SUS accounts:",sus[0])
+    print("Possible master accounts:",sus[1])
     
-    graph = transactions.create_graph()
-    rout = graph.find_shortest_sending_rout('TestAcc2','revox')
-    print('Found correlation rout:')
-    print(" -> ".join(rout))
+    #graph = transactions.create_graph()
+    #rout = graph.find_shortest_sending_rout('navair130',username)
+    #print('Found correlation rout:')
+    #print(" -> ".join(rout))
 
-    # Not working rn:
-    #rout = graph.find_strongest_correlations('TestAcc2','revox')
+    #rout = graph.find_strongest_correlations('navair130',username)
     #print('Found strongest correlation:')
     #print(" -> ".join(rout))
 
