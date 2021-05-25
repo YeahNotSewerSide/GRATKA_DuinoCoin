@@ -529,12 +529,14 @@ def detect_suspicious_accounts(username:str,white_list=[],**kwargs) -> tuple:
 
 
 if __name__ == '__main__':
-    username = 'ttuanphong'
+    username = 'oke96'
     transactions = trace_transactions(username,white_list=STANDART_WHITE_LIST,max_bunch=-1)
     file = open('output.txt','w',encoding='utf-8')
     file.write(str(transactions))
     file.close()
+    print('Senders:')
     print(transactions.get_top_senders(username))
+    print('Recievers:')
     print(transactions.get_top_recipients(username))
     #print(total_recieved(username))
     #print(total_sent(username))
