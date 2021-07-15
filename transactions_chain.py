@@ -8,14 +8,15 @@ STANDART_WHITE_LIST = ['coinexchange',
                        'NodeSBroker',
                        'NodeS',
                        'ducofaucet',
-                       'exchange-bot']
+                       'exchange-bot',
+                       'revox']
 
 class Transaction:
-    def __init__(self,raw_data:dict):
+    def __init__(self,hash:str,raw_data:dict):
         self.amount:float = raw_data['amount']
         self.sender:str = raw_data['sender']
         self.recipient:str = raw_data['recipient']
-        self.hash:str = raw_data['hash']
+        self.hash:str = hash
         self.datetime:int = int(datetime.datetime.strptime(raw_data['datetime'],
                                                         "%d/%m/%Y %H:%M:%S").timestamp())
     def __str__(self):
@@ -345,11 +346,16 @@ class TrasnsactionsChain:
 def get_transactions(username:str) -> list:
     '''gets transactions for 1 user'''
 
-    transactions_json = requests.get(
-            f"https://server.duinocoin.com:5000/transactions?username={username}").json()
+    while True:
+        try:
+            transactions_json = requests.get(
+                f"https://server.duinocoin.com:5000/transactions?username={username}").json()
+            break
+        except:
+            pass
     to_return = []
-    for transaction in transactions_json['result']:
-        to_return.append(Transaction(transaction))
+    for hash,transaction in transactions_json['result'].items():
+        to_return.append(Transaction(hash,transaction))
     return to_return
 
 def _get_transactions_threads_handler(username:str, buffer:list):    
@@ -478,10 +484,14 @@ def determine_main_account(transactions:TrasnsactionsChain,
             max_amount_transactions = len(suspicious_transactions)
     return to_return
 
-def detect_suspicious_accounts(username:str,white_list=[],**kwargs) -> tuple:
+def detect_suspicious_accounts(username:str,
+                               white_list=[],
+                               transactions:list=None,
+                               **kwargs) -> tuple:
     '''returns tuple(sus_accounts:list, main_accounts:list)'''
 
-    transactions = trace_transactions(username,white_list,kwargs)
+    if transactions == None:
+        transactions = trace_transactions(username,white_list,kwargs)
 
     processed_usernames = {}
     sus_usernames = {username:True}
@@ -529,8 +539,10 @@ def detect_suspicious_accounts(username:str,white_list=[],**kwargs) -> tuple:
 
 
 if __name__ == '__main__':
-    username = 'oke96'
-    transactions = trace_transactions(username,white_list=STANDART_WHITE_LIST,max_bunch=-1)
+    username = 'nzangel'
+    transactions = trace_transactions(username,
+                                      white_list=STANDART_WHITE_LIST,
+                                      max_bunch=-1)
     file = open('output.txt','w',encoding='utf-8')
     file.write(str(transactions))
     file.close()
@@ -541,7 +553,10 @@ if __name__ == '__main__':
     #print(total_recieved(username))
     #print(total_sent(username))
     #print(transactions.search_one_way_senders())
-    sus = detect_suspicious_accounts(username,white_list=STANDART_WHITE_LIST,max_bunch=-1)
+    sus = detect_suspicious_accounts(username,
+                                     white_list=STANDART_WHITE_LIST,
+                                     transactions=transactions,
+                                     max_bunch=-1)
     
     print("SUS accounts:",sus[0])
     print("Possible master accounts:",sus[1])
