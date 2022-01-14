@@ -349,7 +349,7 @@ def get_transactions(username:str) -> list:
     while True:
         try:
             transactions_json = requests.get(
-                f"https://server.duinocoin.com:5000/transactions?username={username}").json()
+                f"https://server.duinocoin.com/user_transactions/{username}").json()
             break
         except:
             pass
@@ -542,7 +542,7 @@ if __name__ == '__main__':
     username = 'nzangel'
     transactions = trace_transactions(username,
                                       white_list=STANDART_WHITE_LIST,
-                                      max_bunch=-1)
+                                      max_bunch=2)
     file = open('output.txt','w',encoding='utf-8')
     file.write(str(transactions))
     file.close()
