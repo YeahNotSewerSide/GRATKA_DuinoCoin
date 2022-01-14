@@ -9,7 +9,8 @@ STANDART_WHITE_LIST = ['coinexchange',
                        'NodeS',
                        'ducofaucet',
                        'exchange-bot',
-                       'revox']
+                       'revox',
+                       'wDUCO']
 
 class Transaction:
     def __init__(self,hash:str,raw_data:dict):
