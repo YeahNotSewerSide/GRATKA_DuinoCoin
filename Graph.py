@@ -70,6 +70,7 @@ class Graph:
 
         returns empty list if no correlation
         '''
+        to_return = []
 
         if isinstance(start,str) and isinstance(end,str):
             try:
@@ -83,7 +84,7 @@ class Graph:
         
         if len(self.get_reachable_neighbours(start_index)) == 0\
             or len(self.get_reached_by_neighbours(end_index)) == 0:
-            return []
+            return to_return
 
 
         processed_nodes = {}

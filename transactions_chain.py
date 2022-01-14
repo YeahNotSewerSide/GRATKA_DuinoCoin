@@ -352,10 +352,11 @@ def get_transactions(username:str) -> list:
             transactions_json = requests.get(
                 f"https://server.duinocoin.com/user_transactions/{username}").json()
             break
-        except:
+        except Exception as e:
             pass
     to_return = []
-    for hash,transaction in transactions_json['result'].items():
+    for transaction in transactions_json['result']:
+        hash = transaction['hash']
         to_return.append(Transaction(hash,transaction))
     return to_return
 
@@ -540,7 +541,7 @@ def detect_suspicious_accounts(username:str,
 
 
 if __name__ == '__main__':
-    username = 'nzangel'
+    username = 'dianaT23s'
     transactions = trace_transactions(username,
                                       white_list=STANDART_WHITE_LIST,
                                       max_bunch=2)
@@ -549,6 +550,7 @@ if __name__ == '__main__':
     file.close()
     print('Senders:')
     print(transactions.get_top_senders(username))
+    print()
     print('Recievers:')
     print(transactions.get_top_recipients(username))
     #print(total_recieved(username))
@@ -557,19 +559,16 @@ if __name__ == '__main__':
     sus = detect_suspicious_accounts(username,
                                      white_list=STANDART_WHITE_LIST,
                                      transactions=transactions,
-                                     max_bunch=-1)
+                                     max_bunch=2)
     
     print("SUS accounts:",sus[0])
     print("Possible master accounts:",sus[1])
     
-    #graph = transactions.create_graph()
-    #rout = graph.find_shortest_sending_rout('navair130',username)
-    #print('Found correlation rout:')
-    #print(" -> ".join(rout))
+    # graph = transactions.create_graph()
+    # rout = graph.find_shortest_sending_rout('navair130',username)
+    # print('Found correlation rout:')
+    # print(" -> ".join(rout))
 
-    #rout = graph.find_strongest_correlations('navair130',username)
-    #print('Found strongest correlation:')
-    #print(" -> ".join(rout))
 
     input()
         
