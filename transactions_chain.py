@@ -564,10 +564,10 @@ if __name__ == '__main__':
     print("SUS accounts:",sus[0])
     print("Possible master accounts:",sus[1])
     
-    # graph = transactions.create_graph()
-    # rout = graph.find_shortest_sending_rout('navair130',username)
-    # print('Found correlation rout:')
-    # print(" -> ".join(rout))
+    graph = transactions.create_graph()
+    rout = graph.find_shortest_sending_rout(username,'romiduX82i')
+    print('Found correlation rout:')
+    print(" -> ".join(rout))
 
 
     input()
